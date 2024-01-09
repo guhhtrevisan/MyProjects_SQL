@@ -1,0 +1,28 @@
+-- I wrote this query to find duplicated policies in our database
+
+  select 'Apolices Duplicadas no mesmo correlation' as tipo_problema, current_date as dt_criada, count(ID_1) as qtd, sum(vl_insured_value) as soma_IS 
+from ( 
+	SELECT  opp.txt_correlation_id, max(opp.id) as ID_1, max(x.id) AS ID_2, 
+	max(opp.vl_insured_value) as vl_insured_value 
+	FROM operational_policy AS opp 
+	INNER JOIN  ( 
+		SELECT vf.id, vf.txt_correlation_id, vf.txt_clainmant_Cnpj, vf.txt_policy_number, 
+		vf.id_client, vf.id_insurance_company, vf.txt_process_number 
+		FROM operational_policy AS vf 
+		WHERE 1=1 
+		AND vf.dt_logical_delete IS NULL 
+		and (vf.enum_endorsement_type <> 1 or vf.enum_endorsement_type is null)   ) AS x 
+	ON opp.txt_correlation_id = x.txt_correlation_id  
+	AND opp.txt_clainmant_Cnpj = x.txt_clainmant_Cnpj 
+	AND opp.txt_policy_number = x.txt_policy_number  
+	AND opp.id_client = x.id_client 
+	AND opp.id_insurance_company = x.id_insurance_company 
+	AND opp.id != x.id 
+	and opp.txt_process_number = x.txt_process_number 
+	WHERE 1=1 
+	AND opp.dt_logical_delete IS NULL 
+	and (opp.enum_endorsement_type <> 1 or opp.enum_endorsement_type is null)  
+	group by opp.txt_correlation_id 
+	order by vl_insured_value desc
+				) tb1 
+group by 1
