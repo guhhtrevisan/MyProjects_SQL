@@ -1,0 +1,45 @@
+-- This query finds all the renewal by endorsement policies in our policies table.
+-- It was extremely challenging as long as we don't have this worflow in our system, so I used correlated subqueries to create a loop inside the table.
+
+SELECT 'Problem' As Renovacao_endosso, COUNT(*) total, CURRENT_DATE() AS dt_create
+from (
+
+select  *,
+		case
+			when abs(date(dt_start_id_pos) - date(dt_end_id_1)) <=2 then 'Renovação por endosso'
+			else null 
+		end renovacao_endosso 
+		-- Nomina 'Renovação por endosso' quando a data de início do id seguinte o id_1 dentro do mesmo correlation é 2 dias ou menos depois da data de fim do id_1 
+from (
+
+select  op.id id_1, op.dt_end_policy dt_end_id_1,
+		(select MIN(id) from sga.operational_policy op2 where op2.txt_correlation_id = op.txt_correlation_id and op.id = op2.id_policy_endosso
+		and op.dt_logical_delete is null 
+        and op.dt_emission is not null
+        and op.enum_endorsement_type != 1) id_pos,
+		-- Traz o próximo registro depois do id_1 dentro do msm correlation
+		
+		(select MIN(op2.dt_start_policy) from sga.operational_policy op2 where op2.txt_correlation_id = op.txt_correlation_id and op.id = op2.id_policy_endosso
+		and op.dt_logical_delete is null 
+        and op.dt_emission is not null
+        and op.enum_endorsement_type != 1) dt_start_id_pos,
+		-- Traz a dt_start do próximo registro depois do id_1 dentro do msm correlation
+		
+		txt_correlation_id -- Até aqui, é tudo indispensável para detectar a renovação por endosso. O restante é para apurar métricas
+		
+from operational_policy op
+
+where true 
+and op.dt_logical_delete is null 
+and op.dt_emission is not null
+and op.enum_endorsement_type != 1
+
+group by id_1
+having id_pos is not null -- Filtra para retirar os casos em que não há id depois do id_1 dentro do msm correlation
+                ) x 
+
+where true 
+
+group by id_1
+having renovacao_endosso is not null -- Filtra para trazer somente os casos de 'Renovação por endosso'
+                ) y
