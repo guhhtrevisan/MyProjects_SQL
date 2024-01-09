@@ -1,0 +1,25 @@
+-- In theses cases, I used cases when with SUM() to pivot the table and achieve the numbers I needed
+
+-- 1. Findind the difference among under, well paids and executive inside the database.
+SELECT 
+    SUM(CASE WHEN salary < 100000 THEN 1 ELSE 0 END) as under_paid,
+		SUM(CASE WHEN salary > 100000 AND salary < 160000 THEN 1 ELSE 0 END) as well_paid,
+		SUM(CASE WHEN salary > 160000 THEN 1 ELSE 0 END) as executive
+from employees;
+
+-- 2. Finding the amount of employees for each department.
+SELECT 
+    SUM(CASE WHEN department = 'Sports' THEN 1 END) sports,
+	  SUM(CASE WHEN department = 'Clothing' THEN 1 END) Clothing,
+	  SUM(CASE WHEN department = 'Tools' THEN 1 END) Tools,
+	  SUM(CASE WHEN department = 'Computers' THEN 1 END) Computers
+FROM employees;
+
+-- 3. Total cost per season.
+SELECT 
+    SUM(CASE WHEN season = 'All Year' THEN supply * cost_per_unit END) total_cost_all_year,
+    SUM(CASE WHEN season = 'Summer' THEN supply * cost_per_unit END) total_cost_summer,
+    SUM(CASE WHEN season = 'Winter' THEN supply * cost_per_unit END) total_cost_winter,
+    SUM(CASE WHEN season = 'Spring' THEN supply * cost_per_unit END) total_cost_spring,
+    SUM(CASE WHEN season = 'Fall' THEN supply * cost_per_unit END) total_cost_fall
+FROM fruit_imports;
